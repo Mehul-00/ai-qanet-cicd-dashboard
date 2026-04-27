@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>New Scan | AI-QANet</title>
+<style>
+:root{--bg:#0d1117;--surface:#161b22;--surface2:#21262d;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--critical:#ff4d4f;--high:#ff7a00;--medium:#f0c040;--low:#3fb950;--accent:#2f81f7;--accent2:#1f6feb;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;}
+nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;height:56px;gap:24px;}
+.nav-brand{font-size:16px;font-weight:700;color:var(--accent);display:flex;align-items:center;gap:8px;text-decoration:none;}
+.nav-brand .icon{width:28px;height:28px;background:linear-gradient(135deg,var(--accent),#a371f7);border-radius:6px;display:flex;align-items:center;justify-content:center;}
+.back-link{color:var(--muted);text-decoration:none;font-size:13px;margin-left:auto;}
+.back-link:hover{color:var(--text);}
+.page{max-width:900px;margin:0 auto;padding:32px 24px;}
+.page-title{font-size:22px;font-weight:600;margin-bottom:6px;}
+.page-sub{color:var(--muted);font-size:13px;margin-bottom:28px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:24px;margin-bottom:20px;}
+.card-title{font-size:15px;font-weight:600;margin-bottom:18px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.form-group{margin-bottom:16px;}
+.form-group label{display:block;color:var(--muted);font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+.form-group input,.form-group select,.form-group textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;color:var(--text);font-size:13px;font-family:inherit;transition:border-color .15s;}
+.form-group textarea{font-family:'SF Mono',Monaco,Consolas,monospace;font-size:12px;line-height:1.6;resize:vertical;}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--accent);}
+.form-group select option{background:var(--surface2);}
+.btn{padding:10px 20px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:500;text-decoration:none;display:inline-flex;align-items:center;gap:6px;transition:all .15s;}
+.btn-primary{background:var(--accent);color:white;}
+.btn-primary:hover{background:var(--accent2);}
+.btn-ghost{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+.btn-ghost:hover{border-color:var(--accent);}
+.error{background:rgba(255,77,79,.1);border:1px solid rgba(255,77,79,.3);border-radius:6px;padding:12px 16px;color:var(--critical);margin-bottom:16px;font-size:13px;}
+.examples-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;}
+.example-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;cursor:pointer;transition:border-color .15s;}
+.example-card:hover{border-color:var(--accent);}
+.example-title{font-size:12px;font-weight:600;margin-bottom:4px;}
+.example-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;text-transform:uppercase;margin-bottom:8px;}
+.example-badge::before{content:'';width:5px;height:5px;border-radius:50%;}
+.badge-critical{background:rgba(255,77,79,.15);color:var(--critical);}.badge-critical::before{background:var(--critical);}
+.badge-high{background:rgba(255,122,0,.15);color:var(--high);}.badge-high::before{background:var(--high);}
+.badge-medium{background:rgba(240,192,64,.15);color:var(--medium);}.badge-medium::before{background:var(--medium);}
+.badge-low{background:rgba(63,185,80,.15);color:var(--low);}.badge-low::before{background:var(--low);}
+.example-code{font-family:monospace;font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.spinner{display:none;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:white;border-radius:50%;animation:spin .6s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.scanning-msg{display:none;background:rgba(47,129,247,.1);border:1px solid rgba(47,129,247,.3);border-radius:6px;padding:12px 16px;color:#79c0ff;margin-bottom:16px;font-size:13px;}
+</style>
+</head>
+<body>
+<nav>
+  <a href="{% url 'dashboard' %}" class="nav-brand"><div class="icon">🛡</div>AI-QANet</a>
+  <a href="{% url 'dashboard' %}" class="back-link">← Dashboard</a>
+</nav>
+
+<div class="page">
+  <div class="page-title">Submit Code for AI Scan</div>
+  <div class="page-sub">AI-QANet performs diff-aware Transformer inference to classify vulnerabilities and risk level in real time.</div>
+
+  {% if error %}<div class="error">⚠ {{ error }}</div>{% endif %}
+
+  <div class="card">
+    <div class="card-title">🧪 Quick Examples — click to load</div>
+    <div class="examples-grid">
+      <div class="example-card" onclick="loadExample('sql')">
+        <div class="example-badge badge-critical">Critical</div>
+        <div class="example-title">SQL Injection</div>
+        <div class="example-code">f"SELECT * FROM users WHERE name = '{username}'"</div>
+      </div>
+      <div class="example-card" onclick="loadExample('creds')">
+        <div class="example-badge badge-critical">Critical</div>
+        <div class="example-title">Hardcoded Credentials</div>
+        <div class="example-code">AWS_SECRET_KEY = 'wJalrXUtn...'</div>
+      </div>
+      <div class="example-card" onclick="loadExample('cmd')">
+        <div class="example-badge badge-critical">Critical</div>
+        <div class="example-title">OS Command Injection</div>
+        <div class="example-code">os.system(f'report.sh {name}')</div>
+      </div>
+      <div class="example-card" onclick="loadExample('crypto')">
+        <div class="example-badge badge-high">High</div>
+        <div class="example-title">Broken Cryptography</div>
+        <div class="example-code">hashlib.md5(password.encode())</div>
+      </div>
+      <div class="example-card" onclick="loadExample('pickle')">
+        <div class="example-badge badge-high">High</div>
+        <div class="example-title">Unsafe Deserialization</div>
+        <div class="example-code">pickle.loads(user_data)</div>
+      </div>
+      <div class="example-card" onclick="loadExample('clean')">
+        <div class="example-badge badge-low">Low</div>
+        <div class="example-title">Clean Code (Pass)</div>
+        <div class="example-code">return sum(item.price for item in items)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📋 Scan Configuration</div>
+    <div id="scanningMsg" class="scanning-msg">⚡ AI-QANet inference running... (avg 235ms on CPU runner)</div>
+    <form method="post" id="scanForm" onsubmit="startScan()">
+      {% csrf_token %}
+      <div class="form-row">
+        <div class="form-group">
+          <label>Pipeline</label>
+          <select name="pipeline">
+            {% for p in pipelines %}<option value="{{ p.pk }}">{{ p.name }} ({{ p.repository }})</option>{% endfor %}
+            {% if not pipelines %}<option value="">No pipelines — will create default</option>{% endif %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Filename</label>
+          <input type="text" name="filename" value="src/views.py" placeholder="e.g. src/auth/views.py">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Commit Message</label>
+          <input type="text" name="commit_message" value="feat: add user endpoint" placeholder="Describe the change">
+        </div>
+        <div class="form-group">
+          <label>Author Email</label>
+          <input type="text" name="author" value="developer@company.com" placeholder="dev@example.com">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Code Diff (paste your code or a git diff)</label>
+        <textarea id="codeDiff" name="code_diff" rows="18" placeholder="+def get_user(username):&#10;+    query = f&quot;SELECT * FROM users WHERE name = '{username}'&quot;&#10;+    cursor.execute(query)&#10;+    return cursor.fetchone()"></textarea>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <button type="submit" class="btn btn-primary" id="submitBtn">
+          <span id="btnSpinner" class="spinner"></span>
+          <span id="btnText">🔍 Run AI Scan</span>
+        </button>
+        <a href="{% url 'dashboard' %}" class="btn btn-ghost">Cancel</a>
+        <span style="color:var(--muted);font-size:12px;margin-left:8px">Inference ~235ms · CPU only · No GPU required</span>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+const examples = {
+  sql: `+def get_user(username):\n+    query = f"SELECT * FROM users WHERE name = '{username}'"\n+    cursor.execute(query)\n+    return cursor.fetchone()`,
+  creds: `+AWS_SECRET_KEY = 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY'\n+DB_PASSWORD = 'Sup3rS3cret!'\n+api_key = 'sk-1234567890abcdef'`,
+  cmd: `+def run_report(report_name):\n+    os.system(f'generate_report.sh {report_name}')\n+    result = subprocess.call(f'ls {report_name}', shell=True)`,
+  crypto: `+import hashlib\n+def hash_password(password):\n+    return hashlib.md5(password.encode()).hexdigest()\n+\n+def verify(stored, supplied):\n+    return stored == hashlib.sha1(supplied.encode()).hexdigest()`,
+  pickle: `+import pickle\n+def load_session(data):\n+    # Deserialize user-supplied session data\n+    return pickle.loads(data)`,
+  clean: `+def calculate_total(items):\n+    return sum(item.price for item in items if item.is_active)\n+\n+def paginate(queryset, page_size=20):\n+    return queryset.select_related('user')[:page_size]\n+\n+class OrderSerializer:\n+    def to_dict(self, order):\n+        return {'id': order.id, 'total': order.total, 'status': order.status}`,
+};
+function loadExample(key) {
+  document.getElementById('codeDiff').value = examples[key];
+}
+function startScan() {
+  document.getElementById('scanningMsg').style.display = 'block';
+  document.getElementById('btnSpinner').style.display = 'inline-block';
+  document.getElementById('btnText').textContent = 'Scanning...';
+  document.getElementById('submitBtn').disabled = true;
+}
+</script>
+</body>
+</html>

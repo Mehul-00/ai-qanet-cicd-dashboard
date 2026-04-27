@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI-QANet | CI/CD Security Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #0d1117; --surface: #161b22; --surface2: #21262d;
+  --border: #30363d; --text: #e6edf3; --muted: #8b949e;
+  --critical: #ff4d4f; --high: #ff7a00; --medium: #f0c040; --low: #3fb950;
+  --accent: #2f81f7; --accent2: #1f6feb;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; }
+
+/* Nav */
+nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; align-items: center; height: 56px; gap: 24px; position: sticky; top: 0; z-index: 100; }
+.nav-brand { font-size: 16px; font-weight: 700; color: var(--accent); display: flex; align-items: center; gap: 8px; text-decoration: none; }
+.nav-brand .icon { width: 28px; height: 28px; background: linear-gradient(135deg, var(--accent), #a371f7); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.nav-links { display: flex; gap: 4px; margin-left: auto; }
+.nav-links a { color: var(--muted); text-decoration: none; padding: 6px 12px; border-radius: 6px; transition: all 0.15s; font-size: 13px; }
+.nav-links a:hover, .nav-links a.active { color: var(--text); background: var(--surface2); }
+.nav-badge { background: var(--critical); color: white; border-radius: 10px; padding: 1px 6px; font-size: 10px; font-weight: 700; margin-left: 4px; }
+
+/* Layout */
+.page { max-width: 1400px; margin: 0 auto; padding: 24px; }
+.page-header { margin-bottom: 24px; }
+.page-header h1 { font-size: 22px; font-weight: 600; }
+.page-header p { color: var(--muted); margin-top: 4px; font-size: 13px; }
+
+/* Stat cards */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; position: relative; overflow: hidden; }
+.stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+.stat-card.critical::before { background: var(--critical); }
+.stat-card.high::before { background: var(--high); }
+.stat-card.pass::before { background: var(--low); }
+.stat-card.latency::before { background: var(--accent); }
+.stat-card.f1::before { background: #a371f7; }
+.stat-card.total::before { background: var(--muted); }
+.stat-label { color: var(--muted); font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-value { font-size: 32px; font-weight: 700; margin-top: 8px; line-height: 1; }
+.stat-card.critical .stat-value { color: var(--critical); }
+.stat-card.high .stat-value { color: var(--high); }
+.stat-card.pass .stat-value { color: var(--low); }
+.stat-card.latency .stat-value { color: var(--accent); }
+.stat-card.f1 .stat-value { color: #a371f7; }
+.stat-sub { color: var(--muted); font-size: 12px; margin-top: 6px; }
+
+/* Charts row */
+.charts-row { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 24px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
+.card-title { font-size: 14px; font-weight: 600; margin-bottom: 16px; color: var(--text); display: flex; align-items: center; gap: 8px; }
+.card-title .dot { width: 8px; height: 8px; border-radius: 50%; }
+.dot-accent { background: var(--accent); }
+.dot-purple { background: #a371f7; }
+
+/* Table */
+.runs-table { width: 100%; border-collapse: collapse; }
+.runs-table th { text-align: left; padding: 10px 12px; color: var(--muted); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); }
+.runs-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: middle; }
+.runs-table tr:last-child td { border-bottom: none; }
+.runs-table tr:hover td { background: var(--surface2); }
+.runs-table a { color: var(--accent); text-decoration: none; font-family: monospace; font-size: 12px; }
+.runs-table a:hover { text-decoration: underline; }
+
+/* Badges */
+.badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+.badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; }
+.badge-critical { background: rgba(255,77,79,0.15); color: var(--critical); }
+.badge-critical::before { background: var(--critical); }
+.badge-high { background: rgba(255,122,0,0.15); color: var(--high); }
+.badge-high::before { background: var(--high); }
+.badge-medium { background: rgba(240,192,64,0.15); color: var(--medium); }
+.badge-medium::before { background: var(--medium); }
+.badge-low { background: rgba(63,185,80,0.15); color: var(--low); }
+.badge-low::before { background: var(--low); }
+.badge-passed { background: rgba(63,185,80,0.15); color: var(--low); }
+.badge-failed { background: rgba(255,77,79,0.15); color: var(--critical); }
+
+/* Score bar */
+.score-bar { height: 6px; border-radius: 3px; background: var(--surface2); width: 80px; display: inline-block; overflow: hidden; vertical-align: middle; }
+.score-fill { height: 100%; border-radius: 3px; }
+
+/* Pipelines list */
+.pipeline-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; margin-bottom: 24px; }
+.pipeline-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; text-decoration: none; color: var(--text); transition: border-color 0.15s; display: block; }
+.pipeline-card:hover { border-color: var(--accent); }
+.pipeline-name { font-weight: 600; font-size: 14px; }
+.pipeline-repo { color: var(--muted); font-size: 12px; margin-top: 3px; }
+.pipeline-stats { display: flex; gap: 12px; margin-top: 12px; }
+.pipeline-stat { font-size: 12px; color: var(--muted); }
+.pipeline-stat strong { color: var(--text); }
+
+/* Seed banner */
+.seed-banner { background: linear-gradient(135deg, rgba(47,129,247,0.1), rgba(163,113,247,0.1)); border: 1px solid rgba(47,129,247,0.3); border-radius: 10px; padding: 16px 20px; margin-bottom: 24px; display: flex; align-items: center; gap: 16px; }
+.seed-banner p { flex: 1; font-size: 13px; color: var(--muted); }
+.seed-banner strong { color: var(--text); }
+.btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; font-weight: 500; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s; }
+.btn-primary { background: var(--accent); color: white; }
+.btn-primary:hover { background: var(--accent2); }
+.btn-outline { background: transparent; color: var(--text); border: 1px solid var(--border); }
+.btn-outline:hover { background: var(--surface2); }
+.btn-sm { padding: 5px 12px; font-size: 12px; }
+
+/* Empty state */
+.empty { text-align: center; padding: 48px; color: var(--muted); }
+.empty .icon { font-size: 48px; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="{% url 'dashboard' %}" class="nav-brand">
+    <div class="icon">🛡</div>
+    AI-QANet
+  </a>
+  <div class="nav-links">
+    <a href="{% url 'dashboard' %}" class="active">Dashboard</a>
+    <a href="{% url 'scan_submit' %}">New Scan</a>
+    <a href="/api/stats/" target="_blank">API</a>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="page-header">
+    <h1>Security Intelligence Dashboard</h1>
+    <p>AI-Driven Automated Quality Assurance &amp; Vulnerability Assessment — Enterprise CI/CD Pipelines</p>
+  </div>
+
+  {% if total_runs == 0 %}
+  <div class="seed-banner">
+    <div>🚀</div>
+    <p><strong>No pipeline data yet.</strong> Load mock historical data to explore the dashboard with realistic CI/CD run history.</p>
+    <a href="{% url 'seed_data' %}" class="btn btn-primary">Load Demo Data</a>
+    <a href="{% url 'scan_submit' %}" class="btn btn-outline">Manual Scan</a>
+  </div>
+  {% endif %}
+
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-card total">
+      <div class="stat-label">Total Pipeline Runs</div>
+      <div class="stat-value">{{ total_runs }}</div>
+      <div class="stat-sub">All time</div>
+    </div>
+    <div class="stat-card critical">
+      <div class="stat-label">Critical Vulns</div>
+      <div class="stat-value">{{ critical_count }}</div>
+      <div class="stat-sub">Requires immediate action</div>
+    </div>
+    <div class="stat-card high">
+      <div class="stat-label">High Risk Runs</div>
+      <div class="stat-value">{{ high_count }}</div>
+      <div class="stat-sub">Pipeline gated</div>
+    </div>
+    <div class="stat-card pass">
+      <div class="stat-label">Pass Rate</div>
+      <div class="stat-value">{{ pass_rate }}%</div>
+      <div class="stat-sub">{{ passed_count }} / {{ total_runs }} passed</div>
+    </div>
+    <div class="stat-card latency">
+      <div class="stat-label">Avg Inference</div>
+      <div class="stat-value">{{ avg_latency }}<span style="font-size:16px">ms</span></div>
+      <div class="stat-sub">AI-QANet on CPU runner</div>
+    </div>
+    <div class="stat-card f1">
+      <div class="stat-label">Model F1 Score</div>
+      <div class="stat-value">{{ avg_f1 }}<span style="font-size:16px">%</span></div>
+      <div class="stat-sub">Avg across all scans</div>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div class="charts-row">
+    <div class="card">
+      <div class="card-title"><div class="dot dot-accent"></div>Risk Level Trends — Last 14 Days</div>
+      <canvas id="trendChart" height="120"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-title"><div class="dot dot-purple"></div>Vulnerability Distribution</div>
+      <canvas id="donutChart" height="200"></canvas>
+    </div>
+  </div>
+
+  <!-- Pipelines -->
+  {% if pipelines %}
+  <div class="card" style="margin-bottom:24px">
+    <div class="card-title"><div class="dot dot-accent"></div>Monitored Pipelines</div>
+    <div class="pipeline-list" style="margin-bottom:0">
+      {% for pipeline in pipelines %}
+      <a href="{% url 'pipeline_detail' pipeline.pk %}" class="pipeline-card">
+        <div class="pipeline-name">{{ pipeline.name }}</div>
+        <div class="pipeline-repo">{{ pipeline.repository }}</div>
+        <div class="pipeline-stats">
+          <div class="pipeline-stat"><strong>{{ pipeline.runs.count }}</strong> runs</div>
+          <div class="pipeline-stat">branch: <strong>{{ pipeline.branch }}</strong></div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Recent Runs -->
+  <div class="card">
+    <div class="card-title" style="justify-content:space-between">
+      <span><div class="dot dot-accent" style="display:inline-block"></div> Recent Pipeline Runs</span>
+      <a href="{% url 'scan_submit' %}" class="btn btn-primary btn-sm">+ New Scan</a>
+    </div>
+    {% if recent_runs %}
+    <table class="runs-table">
+      <thead>
+        <tr>
+          <th>Commit</th>
+          <th>Pipeline</th>
+          <th>Author</th>
+          <th>Message</th>
+          <th>Risk</th>
+          <th>Risk Score</th>
+          <th>Status</th>
+          <th>Latency</th>
+          <th>F1</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for run in recent_runs %}
+        <tr>
+          <td><a href="{% url 'run_detail' run.pk %}">{{ run.commit_hash|slice:":8" }}</a></td>
+          <td style="color:var(--muted)">{{ run.pipeline.name }}</td>
+          <td style="color:var(--muted);font-size:12px">{{ run.author|truncatechars:20 }}</td>
+          <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)">{{ run.commit_message|truncatechars:40 }}</td>
+          <td><span class="badge badge-{{ run.risk_level }}">{{ run.risk_level }}</span></td>
+          <td>
+            <span class="score-bar"><span class="score-fill" style="width:{{ run.risk_score|floatformat:0 }}00%;background:{% if run.risk_level == 'critical' %}var(--critical){% elif run.risk_level == 'high' %}var(--high){% elif run.risk_level == 'medium' %}var(--medium){% else %}var(--low){% endif %}"></span></span>
+            <span style="font-size:11px;color:var(--muted);margin-left:6px">{{ run.risk_score|floatformat:2 }}</span>
+          </td>
+          <td><span class="badge badge-{{ run.status }}">{{ run.status }}</span></td>
+          <td style="color:var(--muted)">{{ run.inference_ms }}ms</td>
+          <td style="color:#a371f7">{{ run.f1_score|floatformat:2 }}</td>
+          <td style="color:var(--muted);font-size:12px">{{ run.created_at|date:"M d, H:i" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty">
+      <div class="icon">📭</div>
+      <p>No pipeline runs yet. <a href="{% url 'scan_submit' %}" style="color:var(--accent)">Submit your first scan</a> or <a href="{% url 'seed_data' %}" style="color:var(--accent)">load demo data</a>.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+const chartDefaults = {
+  color: '#8b949e',
+  borderColor: '#30363d',
+  font: { family: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", size: 12 }
+};
+Chart.defaults.color = chartDefaults.color;
+Chart.defaults.font = chartDefaults.font;
+
+// Trend chart
+const trendCtx = document.getElementById('trendChart');
+if (trendCtx) {
+  new Chart(trendCtx, {
+    type: 'line',
+    data: {
+      labels: {{ chart_labels|safe }},
+      datasets: [
+        { label: 'Critical', data: {{ chart_critical|safe }}, borderColor: '#ff4d4f', backgroundColor: 'rgba(255,77,79,0.1)', tension: 0.4, fill: true, pointRadius: 3 },
+        { label: 'High', data: {{ chart_high|safe }}, borderColor: '#ff7a00', backgroundColor: 'rgba(255,122,0,0.08)', tension: 0.4, fill: true, pointRadius: 3 },
+        { label: 'Low/Med', data: {{ chart_low|safe }}, borderColor: '#3fb950', backgroundColor: 'rgba(63,185,80,0.08)', tension: 0.4, fill: true, pointRadius: 3 },
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'top', labels: { usePointStyle: true, padding: 16 } } },
+      scales: {
+        x: { grid: { color: '#21262d' } },
+        y: { grid: { color: '#21262d' }, beginAtZero: true, ticks: { precision: 0 } }
+      }
+    }
+  });
+}
+
+// Donut chart
+const donutCtx = document.getElementById('donutChart');
+if (donutCtx) {
+  const vc = {{ vuln_counts|safe }};
+  new Chart(donutCtx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Critical', 'High', 'Medium', 'Low'],
+      datasets: [{ data: [vc.critical, vc.high, vc.medium, vc.low], backgroundColor: ['#ff4d4f','#ff7a00','#f0c040','#3fb950'], borderWidth: 0, hoverOffset: 6 }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 12 } } },
+      cutout: '68%'
+    }
+  });
+}
+</script>
+</body>
+</html>
