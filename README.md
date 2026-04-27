@@ -1,5 +1,5 @@
 # AI-QANet: CI/CD Security Dashboard
-
+Link of ZeroGPT Report: https://drive.google.com/file/d/1GpZFHKco2LTBd1zvAxURD7P-5m8CQaby/view?usp=sharing
 AI-Driven Automated Quality Assurance and Vulnerability Assessment in Enterprise CI/CD Pipelines.
 
 ## Quick Start
